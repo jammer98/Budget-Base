@@ -40,6 +40,19 @@ export class NetworkError extends Error {
   }
 }
 
+type UnauthorizedHandler = () => void;
+let unauthorizedHandler: UnauthorizedHandler | null = null;
+
+/**
+ * Registered once by AuthProvider. Lets a 401 on any *authenticated* request
+ * clear the session and redirect to /login globally, instead of each page
+ * showing its own stale inline error while silently leaving a dead token
+ * sitting in localStorage.
+ */
+export function setUnauthorizedHandler(handler: UnauthorizedHandler | null) {
+  unauthorizedHandler = handler;
+}
+
 interface RequestOptions {
   method?: "GET" | "POST" | "PATCH" | "DELETE";
   token?: string | null;
@@ -79,9 +92,6 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
   } catch {
-    // fetch() only throws on a genuine network failure (offline/DNS/CORS) — a
-    // slow Render cold start still resolves, just slowly. This is the real
-    // "couldn't reach it at all" case.
     throw new NetworkError();
   }
 
@@ -90,10 +100,28 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   }
 
   const text = await response.text();
-  const data = text ? JSON.parse(text) : {};
+  let data: unknown = {};
+  let parseFailed = false;
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    // Non-JSON body — typically an HTML error page from a cold-starting or
+    // misbehaving server, not something the caller can act on directly.
+    parseFailed = true;
+  }
 
-  if (!response.ok) {
-    const message = (data as ApiErrorBody)?.error ?? `Request failed (${response.status})`;
+  if (!response.ok || parseFailed) {
+    const message = parseFailed
+      ? "The server sent back an unexpected response — it may still be waking up. Please try again in a moment."
+      : (data as ApiErrorBody)?.error ?? `Request failed (${response.status})`;
+
+    // A 401 on a request that *did* carry a token means the session itself
+    // is invalid/expired — not just "you're logged out yet" (login/register
+    // calls never pass a token, so they can't trigger this).
+    if (response.status === 401 && token) {
+      unauthorizedHandler?.();
+    }
+
     throw new ApiError(response.status, message);
   }
 
@@ -155,6 +183,6 @@ export const getBudgets = (token: string) =>
 export const upsertBudget = (token: string, input: CreateBudgetInput) =>
   request<CreateBudgetResponse>("/api/budgets", { method: "POST", token, body: input });
 
-// ---- Health (used to pre-warm the free-tier instance) ----------------------------
+// ---- Health -----------------------------------------------------------------------
 
 export const checkHealth = () => request<{ status: string }>("/health");

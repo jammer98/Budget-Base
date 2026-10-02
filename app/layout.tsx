@@ -1,23 +1,32 @@
-import type { Metadata } from "next";
-import { DM_Sans, Lora, IBM_Plex_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { IBM_Plex_Sans, Newsreader } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { AuthProvider } from "@/lib/auth-context";
-import { ModeToggle } from "@/components/mode-toggle";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
-const dmSans = DM_Sans({ variable: "--font-sans", subsets: ["latin"] });
-const lora = Lora({ variable: "--font-serif", subsets: ["latin"] });
-const ibmPlexMono = IBM_Plex_Mono({
-  variable: "--font-mono",
+const ibmPlexSans = IBM_Plex_Sans({
+  variable: "--font-sans",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
+});
+
+const newsreader = Newsreader({
+  variable: "--font-serif",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
   title: "Budget Base",
   description: "Track expenses, budgets, and spending trends.",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#3F6F5B",
 };
 
 export default function RootLayout({
@@ -26,7 +35,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${dmSans.variable} ${lora.variable} ${ibmPlexMono.variable}`}
+      className={`${ibmPlexSans.variable} ${newsreader.variable}`}
       suppressHydrationWarning
     >
       <body className="min-h-screen antialiased" suppressHydrationWarning>
@@ -38,9 +47,6 @@ export default function RootLayout({
         >
           <QueryProvider>
             <AuthProvider>
-              <div className="fixed right-4 top-4 z-50">
-                <ModeToggle />
-              </div>
               {children}
               <Toaster />
             </AuthProvider>

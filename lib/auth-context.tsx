@@ -1,7 +1,9 @@
 "use client";
 
 import * as React from "react";
+import { toast } from "sonner";
 import * as api from "@/lib/api";
+import { setUnauthorizedHandler } from "@/lib/api";
 import type { User } from "@/lib/types";
 
 interface AuthContextValue {
@@ -23,9 +25,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
 
-  // Rehydrate from localStorage on mount. There's no /api/auth/me to verify
-  // the token against, so we trust what login/register stored; an
-  // expired/invalid token will surface as a 401 on the first real request.
   React.useEffect(() => {
     try {
       const storedToken = localStorage.getItem(TOKEN_KEY);
@@ -70,6 +69,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
   }, []);
+
+  // Any 401 on an authenticated request anywhere in the app routes here.
+  React.useEffect(() => {
+    setUnauthorizedHandler(() => {
+      toast.error("Your session expired. Please log in again.");
+      logout();
+    });
+    return () => setUnauthorizedHandler(null);
+  }, [logout]);
 
   const value = React.useMemo(
     () => ({ user, token, isLoading, login, register, logout }),

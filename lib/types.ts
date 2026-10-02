@@ -29,18 +29,19 @@ export interface Category {
   id: number;
   name: string;
 }
+
 // ---- Expenses -------------------------------------------------------------------
 
 /** Raw shape from the API. `amount` is a string — cast with Number() before math/formatting. */
 export interface Expense {
   id: number;
-  userid: number;
-  categoryid: number | null;
-  categoryname: string | null;
+  user_id: number;
+  category_id: number | null;
+  category_name: string | null;
   amount: string;
   description: string | null;
-  spenton: string; // "YYYY-MM-DD"
-  createdat: string;
+  spent_on: string; // full ISO timestamp — format before displaying, don't render raw
+  created_at: string;
 }
 
 export interface ExpenseResponse {
@@ -126,14 +127,16 @@ export interface BudgetStatusRow {
 export interface BudgetStatusResponse {
   budgetStatus: BudgetStatusRow[];
 }
+
 // ---- Budgets ----------------------------------------------------------------------
+// Confirmed via curl: GET /api/budgets returns real snake_case, NOT the
+// no-underscore shape the original doc described.
 
 export interface Budget {
   id: number;
-  categoryid: number;
-  categoryname: string;
-  /** Assuming NUMERIC → string, same driver behavior as `amount`. Worth confirming. */
-  monthlylimit: string;
+  category_id: number;
+  category_name: string;
+  monthly_limit: string;
 }
 
 export interface BudgetListResponse {
@@ -145,11 +148,12 @@ export interface CreateBudgetInput {
   monthlyLimit: number;
 }
 
+/** Shape inferred from the GET pattern above — not yet confirmed via curl. */
 export interface CreateBudgetResponse {
   budget: {
     id: number;
-    categoryid: number;
-    monthlylimit: string;
+    category_id: number;
+    monthly_limit: string;
   };
 }
 

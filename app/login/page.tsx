@@ -7,10 +7,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-
 import { useAuth } from "@/lib/auth-context";
 import { ApiError, NetworkError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { ModeToggle } from "@/components/mode-toggle";
 import { Input } from "@/components/ui/input";
 import {
   Form,
@@ -62,10 +62,13 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
+    <div className="relative flex min-h-screen items-center justify-center px-4">
+      <div className="absolute right-4 top-4">
+        <ModeToggle />
+      </div>
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>Log in</CardTitle>
+          <CardTitle className="font-serif">Log in</CardTitle>
           <CardDescription>Welcome back — enter your details to continue.</CardDescription>
         </CardHeader>
         <CardContent>
